@@ -27,8 +27,8 @@ find -type f -exec chmod 640 {} \;
 git checkout --force "$(git tag | sort --version-sort | tail --lines=1)"
 
 # Remove write permissions, but keep them on uploads
-find -type d | grep --invert-match --null "uploads/" | xargs -0 chmod 550
-find -type f | grep --invert-match --null "uploads/" | xargs -0 chmod 440
+find -type d | grep --invert-match "uploads/" | xargs chmod 550
+find -type f | grep --invert-match "uploads/" | xargs chmod 440
 
 # TODO
 # * upgrade plugins (how?)

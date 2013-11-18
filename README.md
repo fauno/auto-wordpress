@@ -27,3 +27,10 @@ Common users for webservers are 'http' (on Arch and derivatives),
 In any case, adapt this command:
 
     chown --recursive http:http /srv/http/example.nu
+
+
+## TODO
+
+* Keep track of local changes
+
+* Upgrade plugins and themes

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Start a wordpress (multi)site from a git repo and autoupgrade it.
+
+# We need a path
+test $# -eq 0 &&
+echo "I need the path to clone wordpress into" &&
+exit
+
+# Remove trailing slash
+site="$(echo "$1" | sed "s,/$,,")"
+
+# Clone or fetch?
+if test -d "${site}/.git" ; then
+  pushd "${site}"
+  git fetch origin
+else
+  git clone https://github.com/WordPress/WordPress "${site}"
+  pushd "${site}"
+fi
+
+# Checkout the latest released version
+git checkout --force "$(git tag | sort --version-sort | tail --lines=1)"
+
+# TODO
+# * upgrade plugins (how?)
+# * upgrade themes (how?)

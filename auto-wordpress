@@ -18,8 +18,17 @@ else
   pushd "${site}"
 fi
 
+# Restore write permissions
+# Allow everything to user, read to group and nothing to everyone else
+find -type d -exec chmod 750 {} \;
+find -type f -exec chmod 640 {} \;
+
 # Checkout the latest released version
 git checkout --force "$(git tag | sort --version-sort | tail --lines=1)"
+
+# Remove write permissions, but keep them on uploads
+find -type d | grep --invert-match --null "uploads/" | xargs -0 chmod 550
+find -type f | grep --invert-match --null "uploads/" | xargs -0 chmod 440
 
 # TODO
 # * upgrade plugins (how?)

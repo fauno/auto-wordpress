@@ -6,13 +6,13 @@ test $# -eq 0 &&
 echo "I need the path to clone wordpress into" &&
 exit
 
-# Remove trailing slash
-site="$(echo "$1" | sed "s,/$,,")"
+# Absolute path
+site="$(realpath "$1")"
 
 # Clone or fetch?
 if test -d "${site}/.git" ; then
   pushd "${site}"
-  git fetch origin
+  git fetch --prune --tags origin
 else
   git clone https://github.com/WordPress/WordPress "${site}"
   pushd "${site}"
@@ -20,16 +20,56 @@ fi
 
 # Restore write permissions
 # Allow everything to user, read to group and nothing to everyone else
-find -type d -exec chmod 750 {} \;
-find -type f -exec chmod 640 {} \;
+find "${site}" -type d -exec chmod 750 {} \;
+find "${site}" -type f -exec chmod 640 {} \;
 
 # Checkout the latest released version
 git checkout --force "$(git tag | sort --version-sort | tail --lines=1)"
 
+# Get all installed plugins
+plugins=($(find wp-content/plugins -mindepth 1 -maxdepth 1 -type d -printf "%f\n"))
+plugins_download="$(mktemp -d /tmp/auto-wordpress.$$.XXXX)"
+
+# Get all download links
+pushd "${plugins_download}"
+for _plugin in ${plugins[@]}; do
+  if test -d "${site}/wp-content/plugins/${_plugin}/.git" ; then
+    pushd "${site}/wp-content/plugins/${_plugin}"
+    git pull
+    popd
+  else
+    echo "https://api.wordpress.org/plugins/info/1.0/${_plugin}.xml" >>download.txt
+  fi
+done
+
+wget --input-file="download.txt" --no-verbose --output-document=- |
+  grep --only-matching "https\?://.\+\.zip" |
+  grep "downloads\.wordpress\.org" >>"${plugins_download}/plugins.txt"
+
+# Download everything
+wget -i "${plugins_download}/plugins.txt" -nv
+
+# Unzip everything
+unzip "${plugins_download}/*.zip"
+
+# Sync and remove extra files
+# If we were to sync the whole plugins dir we could loose custom plugins
+for _plugin in ${plugins[@]}; do
+  rsync --exclude="*.zip" \
+        --verbose \
+        --delete \
+        --recursive \
+        --links \
+        "${plugins_download}/${_plugin}/" \
+        "${site}/wp-content/plugins/${_plugin}/"
+done
+
+# Remove temporary dir
+rm -rf "${plugins_download}"
+
 # Remove write permissions, but keep them on uploads
-find -type d | grep --invert-match "uploads/" | xargs chmod 550
-find -type f | grep --invert-match "uploads/" | xargs chmod 440
+find "${site}" -type d | grep --invert-match "uploads/" | xargs chmod 550
+find "${site}" -type f | grep --invert-match "uploads/" | xargs chmod 440
 
 # TODO
-# * upgrade plugins (how?)
 # * upgrade themes (how?)

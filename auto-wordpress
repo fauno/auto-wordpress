@@ -52,6 +52,9 @@ wget -i plugins.txt -nv
 # Unzip everything
 unzip "*.zip"
 
+# We're out of the site, relative paths work again
+popd; popd
+
 # Sync and remove extra files
 # If we were to sync the whole plugins dir we could loose custom plugins
 for _plugin in ${plugins[@]}; do
@@ -68,9 +71,8 @@ done
 rm -rf "${plugins_download}"
 
 # Remove write permissions, but keep them on uploads
-find -type d | grep --invert-match "uploads/" | xargs chmod 550
-find -type f | grep --invert-match "uploads/" | xargs chmod 440
+find "${site}" -type d | grep --invert-match "uploads/" | xargs chmod 550
+find "${site}" -type f | grep --invert-match "uploads/" | xargs chmod 440
 
 # TODO
-# * upgrade plugins (how?)
 # * upgrade themes (how?)

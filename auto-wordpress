@@ -52,15 +52,20 @@ wget -i plugins.txt -nv
 # Unzip everything
 unzip "*.zip"
 
-# Sync 
-rsync --exclude="*.zip" \
-      --verbose \
-      --recursive \
-      --links \
-      "${plugins_download}/" \
-      "${site}/wp-content/plugins/"
+# Sync and remove extra files
+# If we were to sync the whole plugins dir we could loose custom plugins
+for _plugin in ${plugins[@]}; do
+  rsync --exclude="*.zip" \
+        --verbose \
+        --delete \
+        --recursive \
+        --links \
+        "${plugins_download}/${_plugin}/" \
+        "${site}/wp-content/plugins/${_plugin}/"
+done
 
-#rm -rf "${plugins_download}"
+# Remove temporary dir
+rm -rf "${plugins_download}"
 
 # Remove write permissions, but keep them on uploads
 find -type d | grep --invert-match "uploads/" | xargs chmod 550

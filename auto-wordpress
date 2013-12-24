@@ -34,7 +34,7 @@ plugins_download="$(mktemp -d /tmp/auto-wordpress.$$.XXXX)"
 pushd "${plugins_download}"
 for _plugin in ${plugins[@]}; do
   if test -d "${site}/wp-content/plugins/${_plugin}/.git" ; then
-    pushd "${site}/wp-content/plugins/${_plugin}/.git"
+    pushd "${site}/wp-content/plugins/${_plugin}"
     git pull
     popd
   else

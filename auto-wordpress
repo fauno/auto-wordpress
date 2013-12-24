@@ -6,8 +6,8 @@ test $# -eq 0 &&
 echo "I need the path to clone wordpress into" &&
 exit
 
-# Remove trailing slash
-site="$(echo "$1" | sed "s,/$,,")"
+# Absolute path
+site="$(realpath "$1")"
 
 # Clone or fetch?
 if test -d "${site}/.git" ; then
@@ -20,8 +20,8 @@ fi
 
 # Restore write permissions
 # Allow everything to user, read to group and nothing to everyone else
-find -type d -exec chmod 750 {} \;
-find -type f -exec chmod 640 {} \;
+find "${site}" -type d -exec chmod 750 {} \;
+find "${site}" -type f -exec chmod 640 {} \;
 
 # Checkout the latest released version
 git checkout --force "$(git tag | sort --version-sort | tail --lines=1)"
@@ -44,16 +44,13 @@ done
 
 wget --input-file="download.txt" --no-verbose --output-document=- |
   grep --only-matching "https\?://.\+\.zip" |
-  grep "downloads\.wordpress\.org" >>plugins.txt
+  grep "downloads\.wordpress\.org" >>"${plugins_download}/plugins.txt"
 
 # Download everything
-wget -i plugins.txt -nv
+wget -i "${plugins_download}/plugins.txt" -nv
 
 # Unzip everything
-unzip "*.zip"
-
-# We're out of the site, relative paths work again
-popd; popd
+unzip "${plugins_download}/*.zip"
 
 # Sync and remove extra files
 # If we were to sync the whole plugins dir we could loose custom plugins

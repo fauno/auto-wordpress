@@ -55,6 +55,7 @@ unzip "${plugins_download}/*.zip"
 # Sync and remove extra files
 # If we were to sync the whole plugins dir we could loose custom plugins
 for _plugin in ${plugins[@]}; do
+  test -d "${plugins_download}/${_plugin}/" &&
   rsync --exclude="*.zip" \
         --verbose \
         --delete \
@@ -64,12 +65,53 @@ for _plugin in ${plugins[@]}; do
         "${site}/wp-content/plugins/${_plugin}/"
 done
 
-# Remove temporary dir
-rm -rf "${plugins_download}"
+# Get all installed themes
+themes=($(find "${site}/wp-content/themes" -mindepth 1 -maxdepth 1 -type d -printf "%f\n"))
+themes_download="$(mktemp -d /tmp/auto-wordpress.$$.XXXX)"
+
+pushd "${themes_download}"
+for _theme in ${themes[@]}; do
+  if test -d "${site}/wp-content/themes/${_theme}/.git" ; then
+    pushd "${site}/wp-content/themes/${_theme}"
+    git pull
+    popd
+  else
+# For some reason the API for themes is different and requires PHP
+# serialized data :|
+    wget --output-document=- \
+         --no-verbose \
+         --post-data="action=theme_information&request=O:8:\"stdClass\":1:{s:4:\"slug\";s:${#_theme}:\"${_theme}\";}" \
+         "https://api.wordpress.org/themes/info/1.0/" |
+      grep --only-matching "https\?://[^\"']\+" |
+      grep "/download/" >>"${themes_download}/themes.txt"
+  fi
+done
+
+# Download everything
+wget -i "${themes_download}/themes.txt" -nv
+
+# Unzip everything
+unzip "${themes_download}/*.zip"
+
+# Sync and remove extra files
+# If we were to sync the whole themes dir we could loose custom themes
+for _theme in ${themes[@]}; do
+  test -d "${themes_download}/${_theme}/" &&
+  rsync --exclude="*.zip" \
+        --verbose \
+        --delete \
+        --recursive \
+        --links \
+        "${themes_download}/${_theme}/" \
+        "${site}/wp-content/themes/${_theme}/"
+done
+
+# Remove temporary dirs
+rm -rf "${plugins_download}" "${themes_download}"
 
 # Remove write permissions, but keep them on uploads
 find "${site}" -type d | grep --invert-match "uploads/" | xargs chmod 550
 find "${site}" -type f | grep --invert-match "uploads/" | xargs chmod 440
 
 # TODO
-# * upgrade themes (how?)
+# * DRY

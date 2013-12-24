@@ -12,7 +12,7 @@ site="$(echo "$1" | sed "s,/$,,")"
 # Clone or fetch?
 if test -d "${site}/.git" ; then
   pushd "${site}"
-  git fetch origin
+  git fetch --prune --tags origin
 else
   git clone https://github.com/WordPress/WordPress "${site}"
   pushd "${site}"

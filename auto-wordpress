@@ -43,8 +43,8 @@ for _plugin in ${plugins[@]}; do
 done
 
 wget --input-file="download.txt" --no-verbose --output-document=- |
-grep --only-matching "https\?://.\+\.zip" |
-grep "downloads\.wordpress\.org" >>plugins.txt
+  grep --only-matching "https\?://.\+\.zip" |
+  grep "downloads\.wordpress\.org" >>plugins.txt
 
 # Download everything
 wget -i plugins.txt -nv

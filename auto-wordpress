@@ -112,8 +112,16 @@ done
 rm -rf "${plugins_download}" "${themes_download}"
 
 # Remove write permissions, but keep them on uploads
-find "${site}" -type d | grep --invert-match "uploads/" | xargs chmod 550
-find "${site}" -type f | grep --invert-match "uploads/" | xargs chmod 440
+find "${site}" -type d -print0 | xargs -0 chmod 550
+find "${site}" -type f -print0 | xargs -0 chmod 440
+
+# recover write permissions here
+for writable in wp-content/uploads wp-content/cache; do
+  chmod -R ug+w "${site}/${writable}"
+# find php files inside writable dirs
+  find "${site}/${writable}" -name '*.php' -print0 | xargs -0 rm -vf
+done
+
 
 # TODO
 # * DRY

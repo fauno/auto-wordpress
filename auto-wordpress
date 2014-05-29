@@ -35,6 +35,7 @@ pushd "${plugins_download}"
 for _plugin in ${plugins[@]}; do
   if test -d "${site}/wp-content/plugins/${_plugin}/.git" ; then
     pushd "${site}/wp-content/plugins/${_plugin}"
+    git reset --hard
     git pull
     popd
   else
@@ -73,6 +74,7 @@ pushd "${themes_download}"
 for _theme in ${themes[@]}; do
   if test -d "${site}/wp-content/themes/${_theme}/.git" ; then
     pushd "${site}/wp-content/themes/${_theme}"
+    git reset --hard
     git pull
     popd
   else

@@ -20,8 +20,8 @@ fi
 
 # Restore write permissions
 # Allow everything to user, read to group and nothing to everyone else
-find "${site}" -type d -exec chmod 750 {} \;
-find "${site}" -type f -exec chmod 640 {} \;
+find "${site}" -type d -print0 | xargs -0 chmod 750
+find "${site}" -type f -print0 | xargs -0 chmod 640
 
 # Checkout the latest released version
 git checkout --force "$(git tag | sort --version-sort | tail --lines=1)"

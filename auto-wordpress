@@ -18,6 +18,10 @@ else
   pushd "${site}"
 fi
 
+# current user:group
+user="$(stat --printf="%U\n" "${site}" 2>/dev/null)"
+group="$(stat --printf="%G\n" "${site}" 2>/dev/null)"
+
 # Restore write permissions
 # Allow everything to user, read to group and nothing to everyone else
 find "${site}" -type d -print0 | xargs -0 chmod 750
@@ -122,6 +126,9 @@ for writable in wp-content/uploads wp-content/cache; do
   find "${site}/${writable}" -name '*.php' -print0 | xargs -0 rm -vf
 done
 
+# recover ownership
+test -z "${user}${group}" ||
+chown -R ${user}:${group} "${site}"
 
 # TODO
 # * DRY

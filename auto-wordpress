@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Start a wordpress (multi)site from a git repo and autoupgrade it.
+# Fail on first error
+set -e
 
 # We need a path
 test $# -eq 0 &&

@@ -9,7 +9,7 @@ echo "I need the path to clone wordpress into" &&
 exit
 
 # Absolute path
-site="$(realpath "$1")"
+site="$(readlink -f "$1")"
 
 # Clone or fetch?
 if test -d "${site}/.git" ; then

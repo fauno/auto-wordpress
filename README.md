@@ -17,13 +17,18 @@ Auto-wordpress removes write permissions after every upgrade to prevent
 anything from modifying a core file, while it allows to write on
 wp-content/uploads.
 
-But it will also remove read permissions and not give write permissions
-to anyone other than the owner of the files.  This means **you have to
-make sure the owner of the files is the very same user your webserver is
-running as**.
+It's best if the webserver can't modify anything, so any attack that
+relies on making Wordpress write malicious code into files are thwarted.
 
-Common users for webservers are 'http' (on Arch and derivatives),
-'www-data' (on Debian and derivatives [ultra fugly uh?]), etc.
+So `auto-wordpress` will also remove read permissions and not give write
+permissions to anyone, except for the uploads directory.  This means
+**you have to make sure that at least the group of the files is the very
+same group your webserver is running in**, otherwise the webserver won't
+be able to read any file.
+
+Common user and groups for webservers are 'http' (on Arch and
+derivatives), 'www-data' (on Debian and derivatives [ultra fugly uh?]),
+etc.
 
 In any case, adapt this command:
 

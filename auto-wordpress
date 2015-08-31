@@ -121,6 +121,9 @@ rm -rf "${plugins_download}" "${themes_download}"
 find "${site}" -type d -print0 | xargs -0 chmod 550
 find "${site}" -type f -print0 | xargs -0 chmod 440
 
+# Make readme.html invisible to web server
+chmod 600 "${site}/readme.html"
+
 # recover write permissions here
 for writable in wp-content/uploads wp-content/cache; do
   chmod -R ug+w "${site}/${writable}"

@@ -88,7 +88,7 @@ for _theme in ${themes[@]}; do
 # serialized data :|
     wget --output-document=- \
          --no-verbose \
-         --post-data="action=theme_information&request=O:8:\"stdClass\":1:{s:4:\"slug\";s:${#_theme}:\"${_theme}\";}" \
+         --post-data="action=theme_information&request=a:1:{s:4:\"slug\";s:${#_theme}:\"${_theme}\";}" \
          "https://api.wordpress.org/themes/info/1.0/" |
       grep --only-matching "https\?://[^\"']\+" |
       grep "/download/" >>"${themes_download}/themes.txt"

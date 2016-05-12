@@ -23,6 +23,7 @@ fi
 # current user:group
 user="$(stat --printf="%U\n" "${site}" 2>/dev/null)"
 group="$(stat --printf="%G\n" "${site}" 2>/dev/null)"
+version="$(git tag | sort --version-sort | tail --lines=1)"
 
 # Restore write permissions
 # Allow everything to user, read to group and nothing to everyone else
@@ -30,7 +31,7 @@ find "${site}" -type d -print0 | xargs -0 chmod 750
 find "${site}" -type f -print0 | xargs -0 chmod 640
 
 # Checkout the latest released version
-git checkout --force "$(git tag | sort --version-sort | tail --lines=1)"
+git checkout --force "${version}"
 
 # Get all installed plugins
 plugins=($(find wp-content/plugins -mindepth 1 -maxdepth 1 -type d -printf "%f\n"))
@@ -116,8 +117,34 @@ for _theme in ${themes[@]}; do
         "${site}/wp-content/themes/${_theme}/"
 done
 
+languages_download="$(mktemp -d /tmp/auto-wordpress.$$.XXXX)"
+pushd "${languages_download}"
+ls -1 "${site}/wp-content/languages/"*.mo \
+  | sed 's,^.*/,,' \
+  | cut -d'-' -f2 \
+  | grep _ \
+  | cut -d. -f1 \
+  | sort -u \
+  | xargs -I {} \
+    echo "https://downloads.wordpress.org/translation/core/${version}/{}.zip" \
+    >>languages.txt
+
+  wget -nv -nc -i languages.txt
+  if test $(find -name "*.zip" | wc -l) -gt 0; then
+    unzip "*.zip"
+
+    rsync --exclude="*.zip" \
+          --verbose \
+          --recursive \
+          --links \
+          "${languages_download}/" \
+          "${site}/wp-content/languages/"
+  fi
+popd
+
+
 # Remove temporary dirs
-rm -rf "${plugins_download}" "${themes_download}"
+rm -rf "${plugins_download}" "${themes_download}" "${languages_download}"
 
 # Remove write permissions, but keep them on uploads
 find "${site}" -type d -print0 | xargs -0 chmod 550
@@ -127,7 +154,7 @@ find "${site}" -type f -print0 | xargs -0 chmod 440
 chmod 600 "${site}/readme.html"
 
 # recover write permissions here
-for writable in wp-content/uploads wp-content/cache; do
+for writable in wp-content/uploads wp-content/cache wp-content/languages; do
   chmod -R ug+w "${site}/${writable}"
 # find php files inside writable dirs
   find "${site}/${writable}" -name '*.php' -print0 | xargs -0 rm -vf

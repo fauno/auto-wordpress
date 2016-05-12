@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start a wordpress (multi)site from a git repo and autoupgrade it.
 # Fail on first error
-set -e
+#set -e
 
 # We need a path
 test $# -eq 0 &&
@@ -91,7 +91,7 @@ for _theme in ${themes[@]}; do
          --post-data="action=theme_information&request=a:1:{s:4:\"slug\";s:${#_theme}:\"${_theme}\";}" \
          "https://api.wordpress.org/themes/info/1.0/" |
       grep --only-matching "https\?://[^\"']\+" |
-      grep "/download/" >>"${themes_download}/themes.txt"
+      grep "download" >>"${themes_download}/themes.txt"
   fi
 done
 
@@ -99,7 +99,9 @@ done
 wget -i "${themes_download}/themes.txt" -nv
 
 # Unzip everything
-unzip "${themes_download}/*.zip"
+if test $(find "${themes_download}/" -name "*.zip" | wc -l) -gt 0; then
+  unzip "${themes_download}/*.zip"
+fi
 
 # Sync and remove extra files
 # If we were to sync the whole themes dir we could loose custom themes

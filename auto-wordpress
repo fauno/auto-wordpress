@@ -50,28 +50,30 @@ for _plugin in ${plugins[@]}; do
   fi
 done
 
-wget --input-file="download.txt" --no-verbose --output-document=- |
-  grep --only-matching "https\?://.\+\.zip" |
-  grep "downloads\.wordpress\.org" >>"${plugins_download}/plugins.txt"
+if test -s download.txt ; then
+  wget --input-file="download.txt" --no-verbose --output-document=- |
+    grep --only-matching "https\?://.\+\.zip" |
+    grep "downloads\.wordpress\.org" >>"${plugins_download}/plugins.txt"
 
 # Download everything
-wget -i "${plugins_download}/plugins.txt" -nv
+  wget -i "${plugins_download}/plugins.txt" -nv
 
 # Unzip everything
-unzip "${plugins_download}/*.zip"
+  unzip "${plugins_download}/*.zip"
 
 # Sync and remove extra files
 # If we were to sync the whole plugins dir we could loose custom plugins
-for _plugin in ${plugins[@]}; do
-  test -d "${plugins_download}/${_plugin}/" &&
-  rsync --exclude="*.zip" \
-        --verbose \
-        --delete \
-        --recursive \
-        --links \
-        "${plugins_download}/${_plugin}/" \
-        "${site}/wp-content/plugins/${_plugin}/"
-done
+  for _plugin in ${plugins[@]}; do
+    test -d "${plugins_download}/${_plugin}/" &&
+    rsync --exclude="*.zip" \
+          --verbose \
+          --delete \
+          --recursive \
+          --links \
+          "${plugins_download}/${_plugin}/" \
+          "${site}/wp-content/plugins/${_plugin}/"
+  done
+fi
 
 # Get all installed themes
 themes=($(find "${site}/wp-content/themes" -mindepth 1 -maxdepth 1 -type d -printf "%f\n"))
@@ -92,30 +94,32 @@ for _theme in ${themes[@]}; do
          --post-data="action=theme_information&request=a:1:{s:4:\"slug\";s:${#_theme}:\"${_theme}\";}" \
          "https://api.wordpress.org/themes/info/1.0/" |
       grep --only-matching "https\?://[^\"']\+" |
-      grep "download" >>"${themes_download}/themes.txt"
+      grep "/download/" >>"${themes_download}/themes.txt" || true
   fi
 done
 
+if test -s ${themes_download}/themes.txt ; then
 # Download everything
-wget -i "${themes_download}/themes.txt" -nv
+  wget -i "${themes_download}/themes.txt" -nv
 
 # Unzip everything
-if test $(find "${themes_download}/" -name "*.zip" | wc -l) -gt 0; then
-  unzip "${themes_download}/*.zip"
-fi
+  if test $(find "${themes_download}/" -name "*.zip" | wc -l) -gt 0; then
+    unzip "${themes_download}/*.zip"
+  fi
 
 # Sync and remove extra files
 # If we were to sync the whole themes dir we could loose custom themes
-for _theme in ${themes[@]}; do
-  test -d "${themes_download}/${_theme}/" &&
-  rsync --exclude="*.zip" \
-        --verbose \
-        --delete \
-        --recursive \
-        --links \
-        "${themes_download}/${_theme}/" \
-        "${site}/wp-content/themes/${_theme}/"
-done
+  for _theme in ${themes[@]}; do
+    test -d "${themes_download}/${_theme}/" &&
+    rsync --exclude="*.zip" \
+          --verbose \
+          --delete \
+          --recursive \
+          --links \
+          "${themes_download}/${_theme}/" \
+          "${site}/wp-content/themes/${_theme}/"
+  done
+fi
 
 languages_download="$(mktemp -d /tmp/auto-wordpress.$$.XXXX)"
 pushd "${languages_download}"
@@ -155,6 +159,7 @@ chmod 600 "${site}/readme.html"
 
 # recover write permissions here
 for writable in wp-content/uploads wp-content/cache wp-content/languages; do
+  mkdir -p "${site}/${writable}"
   chmod -R ug+w "${site}/${writable}"
 # find php files inside writable dirs
   find "${site}/${writable}" -name '*.php' -print0 | xargs -0 rm -vf
